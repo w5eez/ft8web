@@ -1,0 +1,36 @@
+{
+  "callsign": "N0CALL",
+  "grid": "AA00aa",
+  "auto_grid": false,
+  "units": "km",
+  "op_mode": "normal",
+  "tx_even": true,
+  "tx_level": 50,
+  "auto_cq": false,
+  "qso_retries": 5,
+  "swr_max": 2.5,
+  "swr_protect": true,
+  "active_radio": 0,
+  "radios": [
+    {
+      "name": "FT-991A",
+      "model": 1035,
+      "serial": "/dev/serial/by-id/YOUR-RADIO-USB-DEVICE",
+      "baud": 38400,
+      "device": "plughw:CARD=CODEC,DEV=0",
+      "power_max_w": 100
+    }
+  ],
+  "psk_enabled": false,
+  "qrz_upload": false,
+  "qrz_user": "",
+  "qrz_pass": "",
+  "qrz_api_key": "",
+  "lotw_upload": false,
+  "lotw_user": "",
+  "lotw_pass": "",
+  "pota_user": "",
+  "pota_pass": "",
+  "fd_class": "",
+  "fd_section": ""
+}

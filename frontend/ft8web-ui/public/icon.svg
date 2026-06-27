@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect x="1" y="1" width="62" height="62" rx="13" fill="#0b1118" stroke="#1c2530" stroke-width="2"/>
+  <!-- spectrum bars (waterfall colormap: blue -> cyan -> green -> yellow -> red) -->
+  <rect x="9"  y="36" width="7" height="19" rx="1.5" fill="#1f6feb"/>
+  <rect x="19" y="26" width="7" height="29" rx="1.5" fill="#2aa8c0"/>
+  <rect x="29" y="13" width="7" height="42" rx="1.5" fill="#3fb950"/>
+  <rect x="39" y="22" width="7" height="33" rx="1.5" fill="#ffd166"/>
+  <rect x="49" y="31" width="7" height="24" rx="1.5" fill="#f85149"/>
+</svg>
