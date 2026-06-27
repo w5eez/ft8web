@@ -261,7 +261,7 @@ export class DecodesComponent implements OnInit, OnDestroy {
       if (!this.histCalls.has(s)) d.newCall = true;
       else if (!this.histSlots.has(`${s}|${(d.band || '').toUpperCase()}|${(d.mode || '').toUpperCase()}`)) d.newSlot = true;
     }
-    if (d.grid && this.histGrids.size && !this.histGrids.has(d.grid.toUpperCase())) d.newGrid = true;
+    if (s && s !== this.myCall && d.grid && this.histGrids.size && !this.histGrids.has(d.grid.toUpperCase())) d.newGrid = true;
   }
 
   private loadWorked(): void {
