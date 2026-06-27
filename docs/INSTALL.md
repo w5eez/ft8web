@@ -7,7 +7,7 @@ ft8web has to live at **`~/ft8web`**.
 ```bash
 cd ~
 sudo apt update && sudo apt upgrade && sudo apt install -y git
-git clone <repo-url>
+git clone https://github.com/w5eez/ft8web.git
 cd ~/ft8web
 bash scripts/install.sh
 ```
