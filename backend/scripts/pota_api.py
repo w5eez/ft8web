@@ -198,12 +198,28 @@ def pota_filename(data):
         return "%s@%s-%s.adi" % (call, park, date)
     return "ft8web.adi"
 
+def _park_location(ref):
+    if not ref:
+        return ""
+    try:
+        r = requests.get("https://api.pota.app/park/%s" % ref,
+                         headers={"User-Agent": USER_AGENT}, timeout=15)
+        return (r.json().get("locationDesc") or "")
+    except Exception:
+        return ""
+
 def upload(id_token, adif_path):
     import subprocess
     import tempfile
+    import time
     with open(adif_path, "rb") as f:
         data = f.read()
     fname = pota_filename(data)
+    reference = _adif_field(data, "my_sig_info") or _adif_field(data, "my_pota_ref")
+    callsign = _adif_field(data, "station_callsign") or _adif_field(data, "operator")
+    location = _park_location(reference)
+
+    before = {j.get("jobId") for j in (latest_jobs(id_token) or [])}
 
     cfgfd, cfgpath = tempfile.mkstemp(prefix="ft8web_h_")
     os.write(cfgfd, ('header = "Authorization: %s"\n' % id_token).encode())
@@ -212,19 +228,24 @@ def upload(id_token, adif_path):
     os.chmod(cfgpath, 0o600)
     bodyfd, bodypath = tempfile.mkstemp(prefix="ft8web_rb_")
     os.close(bodyfd)
+    args = ["curl", "-s", "--http2", "-K", cfgpath,
+            "-F", "adif=@%s;filename=%s;type=application/octet-stream" % (adif_path, fname)]
+    if reference:
+        args += ["-F", "reference=%s" % reference]
+    if location:
+        args += ["-F", "location=%s" % location]
+    if callsign:
+        args += ["-F", "callsign=%s" % callsign]
+    args += ["-o", bodypath, "-w", "%{http_code}", ADIF_URL]
     try:
-        proc = subprocess.run(
-            ["curl", "-s", "--http2", "-K", cfgpath,
-             "-F", "adif=@%s;filename=%s;type=application/octet-stream" % (adif_path, fname),
-             "-o", bodypath, "-w", "%{http_code}", ADIF_URL],
-            capture_output=True, timeout=60)
+        proc = subprocess.run(args, capture_output=True, timeout=60)
         status = int((proc.stdout.decode("ascii", "replace").strip() or "0"))
         body_txt = open(bodypath, "r", encoding="utf-8", errors="replace").read()
     finally:
         os.unlink(cfgpath)
         os.unlink(bodypath)
 
-    out = {"ok": 200 <= status < 300, "status": status}
+    out = {"ok": 200 <= status < 300, "status": status, "reference": reference}
     try:
         out["body"] = json.loads(body_txt) if body_txt.strip() else {}
     except ValueError:
@@ -232,6 +253,25 @@ def upload(id_token, adif_path):
     if not out["ok"]:
         detail = proc.stderr.decode("ascii", "replace")[:200] if status == 0 else json.dumps(out["body"])[:300]
         out["error"] = "POTA upload rejected (HTTP %d): %s" % (status, detail)
+        return out
+
+    job = None
+    for _ in range(6):
+        time.sleep(2)
+        for j in (latest_jobs(id_token) or []):
+            if j.get("jobId") not in before and j.get("reference") == reference:
+                job = j
+                break
+        if job:
+            break
+    if job:
+        out["jobId"] = job.get("jobId")
+        out["total"] = job.get("total")
+        out["inserted"] = job.get("inserted")
+    else:
+        out["ok"] = False
+        out["error"] = ("POTA accepted the request (HTTP %d) but created no job for %s — "
+                        "file not ingested" % (status, reference or "?"))
     return out
 
 def latest_jobs(id_token):
