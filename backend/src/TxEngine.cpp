@@ -157,8 +157,9 @@ void TxEngine::transmitOnce() {
 
     if (hooks_.beforeTx) hooks_.beforeTx(msg);
 
-    const std::string wav = workDir_ + "/000000_000001.wav";
     std::error_code ec;
+    std::filesystem::create_directories(workDir_, ec);
+    const std::string wav = workDir_ + "/000000_000001.wav";
     std::filesystem::remove(wav, ec);
 
     const int offset = hooks_.offsetHz ? hooks_.offsetHz() : 1500;

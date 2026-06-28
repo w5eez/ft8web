@@ -39,8 +39,7 @@ std::vector<QsoFields> parseAdif(const std::string& text) {
                     [](char a, char b) {
                         return std::tolower(static_cast<unsigned char>(a)) == static_cast<unsigned char>(b);
                     }) != text.end();
-    bool inHeader = hasEoh && text.find('<') != std::string::npos &&
-                    text.substr(0, text.find('<')).find_first_not_of(" \t\r\n") != std::string::npos;
+    bool inHeader = hasEoh;
     size_t i = 0;
     while ((i = text.find('<', i)) != std::string::npos) {
         size_t e = text.find('>', i);
