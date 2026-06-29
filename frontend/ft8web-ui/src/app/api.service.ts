@@ -91,7 +91,7 @@ export class ApiService {
     return this.http.delete<{ ok: boolean }>(`/api/logs/${encodeURIComponent(file)}`);
   }
 
-  setLogMeta(file: string, meta: Partial<Pick<LogInfo, 'name' | 'park' | 'active'>>): Observable<{ ok: boolean }> {
+  setLogMeta(file: string, meta: Partial<Pick<LogInfo, 'name' | 'park' | 'active' | 'archived'>>): Observable<{ ok: boolean }> {
     return this.http.post<{ ok: boolean }>(`/api/logs/${encodeURIComponent(file)}/meta`, meta);
   }
 

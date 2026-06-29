@@ -208,6 +208,7 @@ export interface LogInfo {
   created: number;
   qsos: number;
   pota_uploaded?: number;
+  archived?: boolean;
 }
 
 export type Qso = Record<string, string>;

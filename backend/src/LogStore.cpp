@@ -151,6 +151,7 @@ void LogStore::loadMeta() {
                 if (e.has("name"))    m.name    = std::string(e["name"].s());
                 if (e.has("park"))    m.park    = std::string(e["park"].s());
                 if (e.has("active"))  m.active  = e["active"].b();
+                if (e.has("archived")) m.archived = e["archived"].b();
                 if (e.has("created")) m.created = e["created"].i();
                 meta_[key] = std::move(m);
             }
@@ -177,6 +178,7 @@ void LogStore::saveMeta() const {
         e["name"]    = kv.second.name;
         e["park"]    = kv.second.park;
         e["active"]  = kv.second.active;
+        e["archived"] = kv.second.archived;
         e["created"] = static_cast<int64_t>(kv.second.created);
         j[kv.first] = std::move(e);
     }
@@ -218,6 +220,7 @@ std::vector<LogInfo> LogStore::list() {
         li.name = kv.second.name;
         li.park = kv.second.park;
         li.active = kv.second.active;
+        li.archived = kv.second.archived;
         li.created = kv.second.created;
         std::ifstream f(adifPath(kv.first));
         if (f) {
@@ -283,7 +286,8 @@ bool LogStore::remove(const std::string& file) {
 }
 
 bool LogStore::setMeta(const std::string& file, const std::string* name,
-                       const std::string* park, const bool* active) {
+                       const std::string* park, const bool* active,
+                       const bool* archived) {
     if (!validFile(file)) return false;
     std::lock_guard<std::mutex> l(mtx_);
     auto it = meta_.find(file);
@@ -291,6 +295,10 @@ bool LogStore::setMeta(const std::string& file, const std::string* name,
     if (name)   it->second.name   = *name;
     if (park)   it->second.park   = *park;
     if (active) it->second.active = *active;
+    if (archived) {
+        it->second.archived = *archived;
+        if (*archived) it->second.active = false;
+    }
     saveMeta();
     return true;
 }

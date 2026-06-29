@@ -30,6 +30,8 @@ import { LogInfo, Qso, UploadStatus } from './models';
           <b *ngIf="up.failed" class="fail">{{ up.failed }} failed</b>
           <b *ngIf="!up.pending && !up.failed" class="okk">✓ idle</b>
         </span>
+        <button class="sweepbtn" *ngIf="sweepCount() > 0" (click)="archiveUploaded()"
+                title="archive all logs fully uploaded to POTA">⤓ Archive uploaded ({{ sweepCount() }})</button>
         <button class="newbtn" (click)="showNew = !showNew">+ New log</button>
       </div>
 
@@ -43,8 +45,8 @@ import { LogInfo, Qso, UploadStatus } from './models';
 
       <div class="flash" *ngIf="flash" [class.err]="flashErr">{{ flash }}</div>
 
-      <div class="cards" *ngIf="logs.length; else nologs">
-        <div class="card" *ngFor="let l of logs" [class.sel]="l.file === selected?.file"
+      <div class="cards" *ngIf="current.length">
+        <div class="card" *ngFor="let l of current" [class.sel]="l.file === selected?.file"
              [class.activecard]="l.active" (click)="select(l)">
           <div class="cardtop">
             <span class="name">{{ l.name }}</span>
@@ -74,13 +76,42 @@ import { LogInfo, Qso, UploadStatus } from './models';
                aria-label="download ADIF" title="download ADIF (.adi)">ADI</a>
             <a class="iconbtn dl" [href]="cbrUrl(l.file)" download
                aria-label="download Cabrillo" title="download Cabrillo (.cbr)">CBR</a>
+            <button class="iconbtn" (click)="archive(l)" aria-label="archive log" title="archive (hide from current list)">⤓</button>
             <button class="iconbtn danger" (click)="removeLog(l)" aria-label="delete log" title="delete log">✕</button>
           </div>
         </div>
       </div>
-      <ng-template #nologs>
-        <div class="empty">No logs yet — create one to start logging QSOs.</div>
-      </ng-template>
+      <div class="empty" *ngIf="!current.length && !archivedLogs.length">No logs yet — create one to start logging QSOs.</div>
+      <div class="empty" *ngIf="!current.length && archivedLogs.length">No current logs — your archived logs are tucked below.</div>
+
+      <div class="archbox" *ngIf="archivedLogs.length">
+        <button class="archhead" (click)="archivedOpen = !archivedOpen">
+          <span class="chev">{{ archivedOpen ? '▾' : '▸' }}</span>
+          <span class="albl">Archived</span>
+          <span class="asum">{{ archivedCount }} park{{ archivedCount === 1 ? '' : 's' }} · {{ archivedQsos }} QSO{{ archivedQsos === 1 ? '' : 's' }}</span>
+        </button>
+        <div class="archbody" *ngIf="archivedOpen">
+          <input class="archfilter" type="text" placeholder="filter archived (park / name)…"
+                 [(ngModel)]="archiveFilter" spellcheck="false" />
+          <ng-container *ngFor="let g of archivedGroups()">
+            <div class="archmonth">{{ g.month }}</div>
+            <div class="archrow" *ngFor="let l of g.logs" [class.sel]="l.file === selected?.file">
+              <span class="apark" *ngIf="l.park">{{ l.park }}</span>
+              <span class="aname">{{ l.name }}</span>
+              <span class="acount">{{ l.qsos }} Q</span>
+              <span class="apota" *ngIf="l.park && l.qsos && potaPending(l) === 0" title="all QSOs on POTA">✓</span>
+              <span class="adate">{{ l.created * 1000 | date:'MMM d' }}</span>
+              <span class="spacer"></span>
+              <button class="iconbtn" (click)="select(l)" title="view QSOs">view</button>
+              <button class="iconbtn" (click)="unarchive(l)" title="unarchive — back to current logs">↩</button>
+              <button class="iconbtn" (click)="reactivate(l)" title="unarchive and set active">★</button>
+              <a class="iconbtn dl" [href]="dlUrl(l.file)" download title="download ADIF (.adi)">ADI</a>
+              <button class="iconbtn danger" (click)="removeLog(l)" title="delete log">✕</button>
+            </div>
+          </ng-container>
+          <div class="archempty" *ngIf="!archivedGroups().length">no archived logs match the filter</div>
+        </div>
+      </div>
 
       <div class="activity" *ngIf="up && (up.lotw_enabled || up.qrz_enabled || up.recent.length)">
         <div class="acthead">Auto-logging activity</div>
@@ -243,6 +274,34 @@ import { LogInfo, Qso, UploadStatus } from './models';
     .editrow .up { text-transform:uppercase; }
     .dist { color:#8aa3b3; white-space:nowrap; }
     .emptycell { text-align:center; color:#6b7a86; padding:18px; }
+    .sweepbtn { margin-left:auto; background:#241c0a; color:#e3b341; border:1px solid #3a2f12; border-radius:5px;
+                padding:7px 12px; font:600 11px system-ui, sans-serif; cursor:pointer; white-space:nowrap; }
+    .sweepbtn:hover { border-color:#e3b341; color:#f0c869; }
+    .sweepbtn + .newbtn { margin-left:8px; }
+    .archbox { order:100; background:#0b1118; border:1px solid #1c2530; border-radius:10px; overflow:hidden; }
+    .archhead { display:flex; align-items:center; gap:10px; width:100%; background:transparent; border:0;
+                color:#9fb0bd; cursor:pointer; padding:11px 14px; font:600 12px system-ui, sans-serif; text-align:left; }
+    .archhead:hover { background:#0e1620; }
+    .archhead .chev { color:#6b7a86; width:12px; }
+    .archhead .albl { color:#cdd9e3; text-transform:uppercase; letter-spacing:.6px; }
+    .archhead .asum { color:#6b7a86; font:11px ui-monospace, monospace; }
+    .archbody { border-top:1px solid #1c2530; padding:10px 14px 12px; display:flex; flex-direction:column; gap:3px; }
+    .archfilter { background:#13202c; color:#cdd9e3; border:1px solid #1c2a38; border-radius:5px;
+                  padding:6px 9px; font:12px ui-monospace, monospace; margin-bottom:6px; max-width:280px; }
+    .archmonth { color:#6b7a86; font:600 10px system-ui, sans-serif; text-transform:uppercase;
+                 letter-spacing:.6px; margin:8px 0 2px; }
+    .archrow { display:flex; align-items:center; gap:8px; padding:4px 6px; border-radius:6px;
+               font:12px ui-monospace, monospace; color:#9fb0bd; }
+    .archrow:hover { background:#0e1620; }
+    .archrow.sel { background:#0e1a24; box-shadow:inset 2px 0 0 #1f6feb; }
+    .archrow .apark { color:#9fe3c0; background:#13202c; padding:1px 6px; border-radius:4px; font-weight:600;
+                      font-size:10px; white-space:nowrap; }
+    .archrow .aname { color:#cdd9e3; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:240px; }
+    .archrow .acount { color:#8aa3b3; white-space:nowrap; }
+    .archrow .apota { color:#7fe3a0; }
+    .archrow .adate { color:#6b7a86; white-space:nowrap; }
+    .archrow .iconbtn { width:auto; min-width:26px; padding:0 7px; height:24px; }
+    .archempty { color:#6b7a86; font-style:italic; padding:8px 4px; }
     @media (max-width: 700px) {
       table { font-size:11px; }
       td, thead th { padding:3px 4px; }
@@ -264,6 +323,8 @@ export class LogsComponent implements OnInit, OnDestroy {
   uploadingFile: string | null = null;
   flash = '';
   flashErr = false;
+  archivedOpen = false;
+  archiveFilter = '';
   private flashTimer?: ReturnType<typeof setTimeout>;
 
   constructor(private api: ApiService, private config: ConfigService, private ws: WsService) {}
@@ -309,6 +370,50 @@ export class LogsComponent implements OnInit, OnDestroy {
   cbrUrl(file: string): string { return '/api/logs/' + encodeURIComponent(file) + '/cbr'; }
 
   potaPending(l: LogInfo): number { return Math.max(0, l.qsos - (l.pota_uploaded || 0)); }
+
+  get current(): LogInfo[] { return this.logs.filter((l) => !l.archived); }
+  get archivedLogs(): LogInfo[] { return this.logs.filter((l) => l.archived); }
+  get archivedCount(): number { return this.archivedLogs.length; }
+  get archivedQsos(): number { return this.archivedLogs.reduce((s, l) => s + l.qsos, 0); }
+
+  sweepable(): LogInfo[] {
+    return this.current.filter((l) => l.park && l.qsos > 0 && this.potaPending(l) === 0);
+  }
+  sweepCount(): number { return this.sweepable().length; }
+
+  archiveUploaded(): void {
+    const ls = this.sweepable();
+    if (!ls.length) return;
+    let remaining = ls.length;
+    const done = () => { if (--remaining === 0) this.reload(); };
+    ls.forEach((l) => this.api.setLogMeta(l.file, { archived: true }).subscribe({ next: done, error: done }));
+    this.setFlash(`Archived ${ls.length} uploaded log${ls.length === 1 ? '' : 's'}`, false);
+  }
+
+  archive(l: LogInfo): void {
+    this.api.setLogMeta(l.file, { archived: true }).subscribe(() => this.reload());
+  }
+  unarchive(l: LogInfo): void {
+    this.api.setLogMeta(l.file, { archived: false }).subscribe(() => this.reload());
+  }
+  reactivate(l: LogInfo): void {
+    this.api.setLogMeta(l.file, { archived: false, active: true }).subscribe(() => this.reload());
+  }
+
+  archivedGroups(): { month: string; logs: LogInfo[] }[] {
+    const f = this.archiveFilter.trim().toUpperCase();
+    const ls = this.archivedLogs
+      .filter((l) => !f || (l.name + ' ' + l.park).toUpperCase().includes(f))
+      .sort((a, b) => b.created - a.created);
+    const groups: { month: string; logs: LogInfo[] }[] = [];
+    for (const l of ls) {
+      const m = new Date(l.created * 1000).toLocaleDateString(undefined, { year: 'numeric', month: 'long' });
+      let g = groups.find((x) => x.month === m);
+      if (!g) { g = { month: m, logs: [] }; groups.push(g); }
+      g.logs.push(l);
+    }
+    return groups;
+  }
 
   uploadToPota(l: LogInfo): void {
     if (this.uploadingFile) return;

@@ -19,6 +19,7 @@ struct LogInfo {
     long long   created = 0;
     int         qsos = 0;
     int         potaUploaded = 0;
+    bool        archived = false;
 };
 
 using QsoFields = std::map<std::string, std::string>;
@@ -35,7 +36,8 @@ public:
     std::optional<LogInfo>   create(const std::string& name, const std::string& park, bool active);
     bool                     remove(const std::string& file);
     bool                     setMeta(const std::string& file, const std::string* name,
-                                     const std::string* park, const bool* active);
+                                     const std::string* park, const bool* active,
+                                     const bool* archived = nullptr);
 
     int  qsoCounter() const;
     void bumpCounter();
@@ -70,7 +72,7 @@ public:
                                            const std::string& callsign);
 
 private:
-    struct Meta { std::string name, park; bool active = false; long long created = 0; };
+    struct Meta { std::string name, park; bool active = false; bool archived = false; long long created = 0; };
 
     void loadMeta();
     void saveMeta() const;

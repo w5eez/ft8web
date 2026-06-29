@@ -46,6 +46,7 @@ crow::json::wvalue logJson(const ft8web::LogInfo& li) {
     e["name"]    = li.name;
     e["park"]    = li.park;
     e["active"]  = li.active;
+    e["archived"] = li.archived;
     e["created"] = static_cast<int64_t>(li.created);
     e["qsos"]    = li.qsos;
     e["pota_uploaded"] = li.potaUploaded;
@@ -1165,14 +1166,16 @@ int main()
         auto body = crow::json::load(req.body);
         if (!body) { r["ok"] = false; return r; }
         std::string name, park;
-        bool active = false;
+        bool active = false, archived = false;
         const std::string* pn = nullptr;
         const std::string* pp = nullptr;
         const bool* pa = nullptr;
-        if (body.has("name"))   { name = jStr(body, "name"); pn = &name; }
-        if (body.has("park"))   { park = jStr(body, "park"); pp = &park; }
-        if (body.has("active")) { active = jBool(body, "active", true); pa = &active; }
-        r["ok"] = logs.setMeta(file, pn, pp, pa);
+        const bool* par = nullptr;
+        if (body.has("name"))     { name = jStr(body, "name"); pn = &name; }
+        if (body.has("park"))     { park = jStr(body, "park"); pp = &park; }
+        if (body.has("active"))   { active = jBool(body, "active", true); pa = &active; }
+        if (body.has("archived")) { archived = jBool(body, "archived", false); par = &archived; }
+        r["ok"] = logs.setMeta(file, pn, pp, pa, par);
         notifyLogs();
         return r;
     });
