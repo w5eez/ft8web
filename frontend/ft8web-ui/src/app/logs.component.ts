@@ -229,7 +229,7 @@ import { LogInfo, Qso, UploadStatus } from './models';
     .park { font:600 10px ui-monospace, monospace; color:#9fe3c0; background:#13202c;
             padding:2px 7px; border-radius:4px; white-space:nowrap; }
     .cardmid { display:flex; justify-content:space-between; font:12px ui-monospace, monospace; color:#8aa3b3; }
-    .cardbtm { display:flex; align-items:center; gap:8px; }
+    .cardbtm { display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
     .switch { display:flex; align-items:center; gap:5px; font:11px system-ui, sans-serif;
               color:#9fb0bd; cursor:pointer; }
     .switch input { accent-color:#3fb950; }
