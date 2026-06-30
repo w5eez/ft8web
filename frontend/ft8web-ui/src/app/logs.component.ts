@@ -93,9 +93,9 @@ import { LogInfo, Qso, UploadStatus } from './models';
         <div class="archbody" *ngIf="archivedOpen">
           <input class="archfilter" type="text" placeholder="filter archived (park / name)…"
                  [(ngModel)]="archiveFilter" spellcheck="false" />
-          <ng-container *ngFor="let g of archivedGroups()">
+          <ng-container *ngFor="let g of archivedGroups(); trackBy: trackMonth">
             <div class="archmonth">{{ g.month }}</div>
-            <div class="archrow" *ngFor="let l of g.logs" [class.sel]="l.file === selected?.file">
+            <div class="archrow" *ngFor="let l of g.logs; trackBy: trackFile" [class.sel]="l.file === selected?.file">
               <span class="apark" *ngIf="l.park">{{ l.park }}</span>
               <span class="aname">{{ l.name }}</span>
               <span class="acount">{{ l.qsos }} Q</span>
@@ -417,6 +417,9 @@ export class LogsComponent implements OnInit, OnDestroy {
     }
     return groups;
   }
+
+  trackMonth(_: number, g: { month: string }): string { return g.month; }
+  trackFile(_: number, l: LogInfo): string { return l.file; }
 
   uploadToPota(l: LogInfo): void {
     if (this.uploadingFile) return;
