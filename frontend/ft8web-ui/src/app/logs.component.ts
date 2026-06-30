@@ -130,6 +130,7 @@ import { LogInfo, Qso, UploadStatus } from './models';
           <button class="newbtn" (click)="startAdd()" *ngIf="addIdx === null">+ Add QSO</button>
         </div>
 
+        <div class="qsowrap">
         <table>
           <thead>
             <tr><th>Date</th><th>UTC</th><th>Call</th><th>Band</th><th>Mode</th><th>Sent</th><th>Rcvd</th><th>Grid</th><th>Dist</th><th></th></tr>
@@ -186,6 +187,7 @@ import { LogInfo, Qso, UploadStatus } from './models';
             </tr>
           </tbody>
         </table>
+        </div>
       </div>
     </div>`,
   styles: [`
@@ -261,9 +263,10 @@ import { LogInfo, Qso, UploadStatus } from './models';
     .actline.err { color:#f85149; }
     .actline.dim { color:#54626e; font-style:italic; }
     .dethead { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+    .qsowrap { max-height:65vh; overflow-y:auto; }
     table { width:100%; border-collapse:collapse; font:13px ui-monospace, monospace; }
     thead th { text-align:left; color:#8aa3b3; padding:4px 8px; font-weight:600;
-               border-bottom:1px solid #1c2530; }
+               border-bottom:1px solid #1c2530; position:sticky; top:0; background:#0b1118; z-index:1; }
     td { padding:4px 8px; border-bottom:1px solid #121a23; white-space:nowrap; }
     tbody tr { cursor:pointer; }
     tbody tr:hover { background:#0e1620; }
